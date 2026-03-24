@@ -241,6 +241,13 @@ def _draw_decoration(draw, scheme, margin_x):
                   fill=(r, g, b))
 
 
+def _new_page(scheme):
+    """创建一个带渐变背景的新页面"""
+    img = Image.new("RGB", (WIDTH, HEIGHT), scheme["bg_top"])
+    _draw_gradient(img, scheme["bg_top"], scheme["bg_bottom"])
+    return img
+
+
 def generate_card(title: str, content: str, output: str,
                   scheme_name: Optional[str] = None):
     # 选择配色
@@ -249,13 +256,6 @@ def generate_card(title: str, content: str, output: str,
     else:
         scheme = random.choice(list(COLOR_SCHEMES.values()))
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), scheme["bg_top"])
-
-    # 渐变背景
-    _draw_gradient(img, scheme["bg_top"], scheme["bg_bottom"])
-
-    draw = ImageDraw.Draw(img)
-
     # 字体
     title_font = _load_font(76, bold=True)
     content_font = _load_font(38)
@@ -263,22 +263,31 @@ def generate_card(title: str, content: str, output: str,
     emoji_font_content = _load_emoji_font(36)
 
     margin_x = 80
+    content_line_height = 58
+    max_content_y = HEIGHT - 120
+    content_start_y = 100  # 续页正文起始 y
+
+    # 预处理所有正文行
+    content_lines = _emoji_aware_wrap(content, width=38)
+
+    # ── 第一页：标题 + 分隔线 + 正文开头 ──
+    img = _new_page(scheme)
+    draw = ImageDraw.Draw(img)
     y = 100
 
-    # 装饰元素
     _draw_decoration(draw, scheme, margin_x)
     y += 40
 
-    # ── 标题 ──
-    title_lines = _emoji_aware_wrap(title, width=18)  # 大字体每行更少字
+    # 标题
+    title_lines = _emoji_aware_wrap(title, width=18)
     title_line_height = 95
-    for line in title_lines[:3]:  # 最多3行标题
+    for line in title_lines[:3]:
         _draw_text_with_emoji(draw, img, margin_x, y, line,
                               title_font, emoji_font_title, scheme["title"])
         y += title_line_height
     y += 25
 
-    # 分隔线 - 渐变
+    # 分隔线
     sep_y = y
     accent = scheme["accent"]
     accent2 = scheme["accent2"]
@@ -292,23 +301,50 @@ def generate_card(title: str, content: str, output: str,
         draw.point((margin_x + sx, sep_y + 1), fill=(r, g, b, 128))
     y += 45
 
-    # ── 正文 ──
-    max_content_y = HEIGHT - 120
-    content_lines = _emoji_aware_wrap(content, width=38)
-    content_line_height = 58
-    for line in content_lines:
+    # ── 正文（多页） ──
+    pages = []
+    line_idx = 0
+
+    while line_idx < len(content_lines):
+        line = content_lines[line_idx]
         if y + content_line_height > max_content_y:
-            draw.text((margin_x, y), "...", font=content_font,
-                      fill=scheme["content"])
-            break
+            # 当前页已满，保存并开新页
+            _draw_decoration(draw, scheme, margin_x)
+            pages.append(img)
+            img = _new_page(scheme)
+            draw = ImageDraw.Draw(img)
+            y = content_start_y
+            continue  # 不递增 line_idx，在新页重新绘制当前行
         _draw_text_with_emoji(draw, img, margin_x, y, line,
                               content_font, emoji_font_content,
                               scheme["content"])
         y += content_line_height
+        line_idx += 1
 
+    # 最后一页的底部装饰
+    _draw_decoration(draw, scheme, margin_x)
+    pages.append(img)
+
+    # ── 保存 ──
     Path(output).parent.mkdir(parents=True, exist_ok=True)
-    img.save(output, "PNG")
-    print(f"Card saved: {output}")
+    saved_files = []
+
+    if len(pages) == 1:
+        pages[0].save(output, "PNG")
+        saved_files.append(output)
+        print(f"Card saved: {output}")
+    else:
+        stem = Path(output).stem
+        suffix = Path(output).suffix
+        parent = Path(output).parent
+        for i, page in enumerate(pages):
+            page_path = str(parent / f"{stem}_{i+1}{suffix}")
+            page.save(page_path, "PNG")
+            saved_files.append(page_path)
+            print(f"Card saved: {page_path}")
+        print(f"Total: {len(pages)} pages")
+
+    return saved_files
 
 
 def main():
