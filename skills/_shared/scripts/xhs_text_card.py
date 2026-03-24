@@ -213,32 +213,6 @@ def _draw_text_with_emoji(draw, img, x, y, text, text_font, emoji_font, fill):
             cursor_x += bbox[2] - bbox[0]
 
 
-def _draw_decoration(draw, scheme, margin_x):
-    """绘制装饰元素：顶部和底部的渐变色块"""
-    accent = scheme["accent"]
-    accent2 = scheme["accent2"]
-
-    # 顶部装饰 - 渐变色条
-    bar_width = 80
-    bar_height = 5
-    y_top = 100
-    for bx in range(bar_width):
-        ratio = bx / bar_width
-        r = int(accent[0] + (accent2[0] - accent[0]) * ratio)
-        g = int(accent[1] + (accent2[1] - accent[1]) * ratio)
-        b = int(accent[2] + (accent2[2] - accent[2]) * ratio)
-        draw.line([(margin_x + bx, y_top), (margin_x + bx, y_top + bar_height)],
-                  fill=(r, g, b))
-
-    # 底部装饰 - 渐变色条
-    y_bot = HEIGHT - 80
-    for bx in range(50):
-        ratio = bx / 50
-        r = int(accent2[0] + (accent[0] - accent2[0]) * ratio)
-        g = int(accent2[1] + (accent[1] - accent2[1]) * ratio)
-        b = int(accent2[2] + (accent[2] - accent2[2]) * ratio)
-        draw.line([(margin_x + bx, y_bot), (margin_x + bx, y_bot + 4)],
-                  fill=(r, g, b))
 
 
 def _new_page(scheme):
@@ -275,7 +249,6 @@ def generate_card(title: str, content: str, output: str,
     draw = ImageDraw.Draw(img)
     y = 100
 
-    _draw_decoration(draw, scheme, margin_x)
     y += 40
 
     # 标题
@@ -309,7 +282,6 @@ def generate_card(title: str, content: str, output: str,
         line = content_lines[line_idx]
         if y + content_line_height > max_content_y:
             # 当前页已满，保存并开新页
-            _draw_decoration(draw, scheme, margin_x)
             pages.append(img)
             img = _new_page(scheme)
             draw = ImageDraw.Draw(img)
@@ -321,8 +293,6 @@ def generate_card(title: str, content: str, output: str,
         y += content_line_height
         line_idx += 1
 
-    # 最后一页的底部装饰
-    _draw_decoration(draw, scheme, margin_x)
     pages.append(img)
 
     # ── 保存 ──
