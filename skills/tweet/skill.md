@@ -69,7 +69,7 @@ python ~/.claude/skills/tweet/scripts/tweet_split.py --file /tmp/tweet_input.txt
 }
 ```
 
-**校验**：如果任何一条的 weight > 280，报错并提示用户修改。
+**校验**：如果任何一条的 weight > 280，**主动精简内容使其 ≤ 280**，而不是报错让用户修改。精简策略：缩短措辞、去掉非必要修饰词、用短 URL 替换长 URL（URL 统一算 23 weighted chars）。
 
 ### Step 2: 发布第一条推文
 
@@ -195,6 +195,10 @@ navigate_page(url: 推文URL)
 
 等待加载后 take_snapshot，确认看到推文内容和回复输入框。
 
+#### Step 1.5: 预检回复内容长度
+
+输入前先用 tweet_split.py 或手动估算确保回复内容 ≤ 280 weighted chars。如果超限，主动精简：缩短措辞、去掉冗余修饰、URL 按 23 chars 计算。**不要等输入后看到负数计数再改**——清空重写可能导致页面跳转。
+
 #### Step 2: 找到回复输入框
 
 ```
@@ -228,3 +232,6 @@ take_snapshot → 确认回复出现在对话中
 - 回复输入框在推文详情页底部，textbox description 含 "Post your reply"
 - 发送按钮是 `button "Reply"`（不是 "Post"）
 - **每次发送后必须检查 Premium 弹窗**，出现则点 "Maybe later" 关闭
+- **先预检后输入**：所有内容（发布和回复）在输入前必须确保 ≤ 280 weighted chars。snapshot 中的负数计数（如 `-127`）和 Reply 按钮 disabled 是保底检测，不应作为常规流程
+- **URL 权重**：任何 URL 统一算 23 weighted chars（t.co 短链），不按实际字符数计算
+- **不要用 Ctrl+A/Backspace 清空回复框**：这可能导致页面跳转到 compose/post 弹窗，丢失回复上下文。如需重写，关闭弹窗后 navigate_page 回到目标推文 URL 重新操作
