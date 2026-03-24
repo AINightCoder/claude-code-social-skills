@@ -1,10 +1,12 @@
 ---
 name: douyin
-version: 1.0.0
+version: 1.1.0
 description: |
-  通过 Chrome DevTools MCP 发布抖音图文。
+  通过 Chrome DevTools MCP 发布抖音图文或评论。
+  Publish image posts or comments on Douyin (抖音/TikTok China) via browser automation.
   支持多张图片上传，可指定话题。
-  用户输入 /douyin 后跟图片路径和描述文本即可发布。
+  用户输入 /douyin 后跟图片路径和描述文本即可发布，使用 --comment 可评论指定作品。
+  触发关键词：douyin, 抖音, 发抖音, 抖音图文, post to douyin, TikTok
 allowed-tools:
   - Bash
   - Read
@@ -183,6 +185,13 @@ navigate_page(url: "https://creator.douyin.com/creator-micro/content/upload?defa
 
 抖音创作者中心需要登录。支持扫码登录和手机验证码登录。如果是干净 profile 需要用户先手动登录。
 
+### 错误处理
+
+- 登录过期：页面跳转到登录页，提示用户在 Chrome 调试窗口中登录抖音创作者中心
+- 上传失败：如果上传后页面未跳转到编辑页，take_screenshot 检查状态，重试 upload_file
+- 弹窗干扰：首次使用可能弹出"新增共创中心"提示，点击 `button "我知道了"` 关闭
+- 评论输入框未激活：如果点击占位文本后未出现 combobox，尝试 take_screenshot 后再次点击
+
 ### 与其他 Skill 的差异
 
 | 维度 | Twitter | 即刻 | 知乎 | 抖音图文 |
@@ -192,3 +201,73 @@ navigate_page(url: "https://creator.douyin.com/creator-micro/content/upload?defa
 | 标题 | 无 | 无 | 有(100字) | 有(20字) |
 | 描述 | 280 chars | 无限 | 无限 | 1000字 |
 | URL 获取 | DOM | API | 编辑URL | 待定 |
+
+---
+
+## 评论功能
+
+### 触发
+
+```
+/douyin --comment <作品URL> <评论内容>
+```
+
+作品 URL 格式：`https://www.douyin.com/note/<note_id>` 或 `https://www.douyin.com/video/<video_id>`
+
+### 流程
+
+#### Step 1: 导航到作品页
+
+```
+navigate_page(url: 作品URL)
+```
+
+如果不知道作品 URL，可从个人主页获取：
+```
+1. navigate_page(url: "https://www.douyin.com/user/self")
+2. take_snapshot → 找到目标作品的 link 元素（含 /note/ 或 /video/ 的 URL）
+3. 提取作品 URL，用 navigate_page 直接导航
+```
+
+**注意**：不要从个人主页点击作品（会打开错误的推荐视频弹窗），必须用 navigate_page 直接导航到作品 URL。
+
+#### Step 2: 激活评论输入框
+
+抖音评论输入框默认不可见，需要先激活：
+
+```
+1. take_snapshot → 找到 "留下你的精彩评论吧" 文本元素
+2. click(uid) → 点击该文本激活输入框
+3. take_snapshot → 确认出现 combobox 元素（description 含 "留下你的精彩评论吧"，focusable）
+```
+
+**关键**：点击 "留下你的精彩评论吧" 后，会出现一个 `combobox` 元素，这才是真正的输入框。
+
+#### Step 3: 输入评论
+
+```
+1. click(combobox uid) → 确保聚焦
+2. type_text(text: 评论内容)
+```
+
+#### Step 4: 发送评论
+
+```
+press_key(key: "Enter") → 发送评论
+```
+
+**注意**：抖音评论用 Enter 键发送（不是点击按钮）。
+
+#### Step 5: 确认成功
+
+```
+take_screenshot → 确认评论出现在评论列表中（评论数从 0 变为 1）
+```
+
+### 评论注意事项
+
+- 评论输入框是 `combobox` 类型（不是 textbox），需要先点击占位文本激活
+- **不要从个人主页点击作品卡片**，会触发推荐视频弹窗而非目标作品；直接用 navigate_page 导航到 `/note/<id>` URL
+- 评论用 **Enter 键**发送，不需要找发送按钮
+- 右侧评论面板的 "评论(N)" tab 需要先被激活才能看到评论列表
+- 抖音可能弹出下载客户端提示，可忽略

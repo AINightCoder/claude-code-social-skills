@@ -1,10 +1,12 @@
 ---
 name: tweet
-version: 1.0.0
+version: 1.1.0
 description: |
-  通过 Chrome DevTools MCP 发布 Twitter 推文。
+  通过 Chrome DevTools MCP 发布 Twitter/X 推文或回复评论。
+  Post tweets, threads, or replies on X/Twitter via browser automation.
   自动检测内容长度，超过 280 weighted chars 时自动拆分为 thread。
-  用户输入 /tweet 后跟内容即可发布。
+  用户输入 /tweet 后跟内容即可发布，使用 --reply 可回复指定推文。
+  触发关键词：tweet, 发推, 推特, twitter, X, reply, 回复推文, post to X
 allowed-tools:
   - Bash
   - Read
@@ -14,6 +16,7 @@ allowed-tools:
   - mcp__chrome-devtools__click
   - mcp__chrome-devtools__type_text
   - mcp__chrome-devtools__press_key
+  - mcp__chrome-devtools__evaluate_script
 tags:
   - twitter
   - social-media
@@ -171,3 +174,57 @@ pending: [{ index: 3, content: "..." }]
 
 - type_text 直接输入中文内容，Chrome DevTools 会正确处理
 - 不需要额外编码转换
+
+---
+
+## 回复/评论功能
+
+### 触发
+
+```
+/tweet --reply <推文URL> <回复内容>
+```
+
+### 流程
+
+#### Step 1: 导航到目标推文
+
+```
+navigate_page(url: 推文URL)
+```
+
+等待加载后 take_snapshot，确认看到推文内容和回复输入框。
+
+#### Step 2: 找到回复输入框
+
+```
+1. take_snapshot → 找到回复输入框
+   - 特征：textbox "Post text"，description 含 "Post your reply"
+2. click(uid) → 聚焦回复框
+3. type_text(text: 回复内容)
+```
+
+#### Step 3: 发送回复
+
+```
+1. take_snapshot → 找到 button "Reply"（非 disabled）
+2. click(uid) → 发送回复
+```
+
+#### Step 4: 处理弹窗
+
+发送后可能出现 Premium 推广弹窗：
+- 特征：出现 "Want more people to see your reply?" 或 "Upgrade to Premium"
+- 处理：找到 `button "Maybe later"` 或 `button "Close"`，click 关闭
+
+#### Step 5: 确认成功
+
+```
+take_snapshot → 确认回复出现在对话中
+```
+
+### 回复注意事项
+
+- 回复输入框在推文详情页底部，textbox description 含 "Post your reply"
+- 发送按钮是 `button "Reply"`（不是 "Post"）
+- **每次发送后必须检查 Premium 弹窗**，出现则点 "Maybe later" 关闭

@@ -1,11 +1,13 @@
 ---
 name: xhs
-version: 2.0.0
+version: 2.1.0
 description: |
-  通过 Chrome DevTools MCP 发布小红书笔记。
+  通过 Chrome DevTools MCP 发布小红书笔记或评论。
+  Post notes or comments on Xiaohongshu (小红书/RED) via browser automation.
   自动将文字内容生成为卡片图片，解决小红书必须有图片的限制。
   支持指定标题、话题标签，也支持直接提供图片路径。
-  用户输入 /xhs 后跟内容即可发布。
+  用户输入 /xhs 后跟内容即可发布，使用 --comment 可评论指定笔记。
+  触发关键词：xhs, 小红书, RED, xiaohongshu, 发小红书, post to RED
 allowed-tools:
   - Bash
   - Read
@@ -89,9 +91,11 @@ navigate_page(url: "https://creator.xiaohongshu.com/publish/publish", timeout: 3
 ### Step 4: 上传图片
 
 ```
-1. take_snapshot → 找到上传区域的文件选择器（input[type=file] 或 button "上传图片"/"拖拽或点击上传"）
+1. take_snapshot → 找到文件选择器（button "选择文件"）
+   - 注意：需要先切换到"上传图文" tab（默认可能是视频上传页）
+   - 如果看到"上传视频"而非"上传图片"，先点击 "上传图文" tab
 2. upload_file(uid, filePath: 图片路径)
-3. 等待上传完成（take_snapshot 确认缩略图出现）
+3. 等待上传完成（take_snapshot 确认页面跳转到编辑页）
 ```
 
 **多张图片**：
@@ -197,3 +201,61 @@ navigate_page(url: "https://creator.xiaohongshu.com/publish/publish", timeout: 3
 - 登录过期：提示用户在 Chrome 调试窗口中重新登录
 - 图片上传失败：重试一次，仍失败则提示用户检查图片格式和大小
 - 发布失败：take_screenshot 截图，输出错误信息供排查
+
+---
+
+## 评论功能
+
+### 触发
+
+```
+/xhs --comment <笔记URL或用户主页URL> <评论内容>
+```
+
+### 流程
+
+#### Step 1: 找到笔记
+
+**如果提供了笔记 URL**（格式 `https://www.xiaohongshu.com/explore/<note_id>...`）：
+```
+navigate_page(url: 笔记URL)
+```
+
+**如果需要从用户主页找笔记**：
+```
+1. navigate_page(url: "https://www.xiaohongshu.com/user/profile/<user_id>")
+2. take_snapshot → 找到目标笔记的 link 元素
+3. click(uid) → 打开笔记详情弹窗
+```
+
+#### Step 2: 输入评论
+
+笔记详情弹窗打开后：
+```
+1. take_snapshot → 找到评论输入区域
+   - 特征：paragraph 元素，附近有 "说点什么..." 或 "点击评论" 提示
+   - 或者是带 placeholder 的可编辑区域
+2. click(uid) → 聚焦评论输入框
+3. type_text(text: 评论内容)
+```
+
+#### Step 3: 发送评论
+
+```
+1. take_snapshot → 找到 button "发送"（非 disabled）
+2. click(uid) → 发送评论
+```
+
+#### Step 4: 确认成功
+
+```
+take_screenshot → 确认评论出现在评论列表中
+```
+
+### 评论注意事项
+
+- 小红书笔记在 web 端以弹窗形式打开（从用户主页点击）
+- 评论输入区是 `paragraph` 元素（不是 textbox），点击后变为可编辑
+- 发送按钮是 `button "发送"`
+- 评论区可能显示 "这是一片荒地" 表示暂无评论
+- 小红书不支持在评论中添加可点击链接，URL 以纯文本形式显示

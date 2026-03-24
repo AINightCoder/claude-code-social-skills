@@ -1,10 +1,12 @@
 ---
 name: zhihu
-version: 1.0.0
+version: 1.1.0
 description: |
-  通过 Chrome DevTools MCP 发布知乎文章。
+  通过 Chrome DevTools MCP 发布知乎文章或评论。
+  Publish articles or comments on Zhihu (知乎) via browser automation.
   支持 Markdown 语法输入，可指定话题。
-  用户输入 /zhihu 后跟标题和正文即可发布。
+  用户输入 /zhihu 后跟标题和正文即可发布，使用 --comment 可评论指定文章。
+  触发关键词：zhihu, 知乎, 发知乎, 知乎文章, post to zhihu, 知乎评论
 allowed-tools:
   - Bash
   - Read
@@ -182,6 +184,12 @@ https://zhuanlan.zhihu.com/p/xxx
 
 知乎写文章需要登录。如果导航到 `/write` 后跳转到登录页（URL 包含 `/signin`），需要提示用户先在 Chrome 调试窗口中手动登录知乎。
 
+### 错误处理
+
+- 登录过期：导航到 `/write` 后 URL 包含 `/signin`，提示用户在 Chrome 调试窗口中登录
+- 发布失败：如果 "发布" 按钮点击后仍显示编辑页，take_screenshot 检查是否有错误提示
+- 评论焦点丢失：如果 type_text 输入到搜索框而非评论框，重新 click 评论框 uid 后再输入
+
 ### 与其他 Skill 的差异
 
 | 维度 | Twitter | 即刻 | 知乎 |
@@ -192,3 +200,59 @@ https://zhuanlan.zhihu.com/p/xxx
 | 字数限制 | 280 weighted | 无 | 无 |
 | URL 获取 | DOM 提取 | API 查询 | 编辑 URL 提取 |
 | 话题 | #hashtag 内嵌 | 圈子选择器 | 话题搜索添加 |
+
+---
+
+## 评论功能
+
+### 触发
+
+```
+/zhihu --comment <文章URL> <评论内容>
+```
+
+文章 URL 格式：`https://zhuanlan.zhihu.com/p/<article_id>`
+
+### 流程
+
+#### Step 1: 导航到文章页
+
+```
+navigate_page(url: 文章URL)
+```
+
+#### Step 2: 找到评论输入框并输入
+
+```
+1. take_snapshot → 找到评论输入框
+   - 特征：textbox multiline，description 为 "理性发言，友善互动"
+2. click(uid) → 聚焦评论框（点击后会展开评论工具栏，出现表情、发布按钮等）
+3. type_text(text: 评论内容)
+```
+
+**关键陷阱**：知乎页面顶部有搜索框 `combobox "搜索"`，type_text 可能误输入到搜索框。必须确保 take_snapshot 中评论框显示 `focusable focused` 状态后再输入。
+
+#### Step 3: 发送评论
+
+```
+1. take_snapshot → 找到 button "发布"（在评论工具栏中，非 disabled）
+2. click(uid) → 发送评论
+```
+
+**注意**：
+- **不要用 Ctrl+Enter**，这会触发搜索框而不是发送评论
+- 必须点击评论框展开后出现的 `button "发布"`
+- 如果 button "发布" 是 disabled 状态，说明评论框未正确输入内容
+
+#### Step 4: 确认成功
+
+```
+take_screenshot → 确认评论出现在评论列表中
+```
+
+### 评论注意事项
+
+- 评论框 description 是 "理性发言，友善互动"
+- 点击评论框后会展开工具栏（表情、发布按钮）
+- **焦点陷阱**：搜索框可能抢占焦点，确认评论框 focused 后再输入
+- 发送用 click "发布" 按钮，**不要用键盘快捷键**

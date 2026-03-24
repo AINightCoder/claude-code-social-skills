@@ -1,10 +1,12 @@
 ---
 name: jike
-version: 1.0.0
+version: 1.1.0
 description: |
-  通过 Chrome DevTools MCP 发布即刻动态。
+  通过 Chrome DevTools MCP 发布即刻动态或评论。
+  Post updates or comments on Jike (即刻) via browser automation.
   支持指定圈子（默认选择推荐的第一个圈子）。
-  用户输入 /jike 后跟内容即可发布。
+  用户输入 /jike 后跟内容即可发布，使用 --comment 可评论指定动态。
+  触发关键词：jike, 即刻, 发即刻, post to jike, 即刻动态
 allowed-tools:
   - Bash
   - Read
@@ -160,3 +162,62 @@ https://web.okjike.com/originalPost/xxx
 - 确认输入框聚焦后再输入内容
 - 确认圈子选择完成后再点击发送
 - 发送后等待 snapshot 确认动态出现在 timeline 中
+
+### 错误处理
+
+- 登录过期：页面可能跳转到登录页或显示空白，提示用户在 Chrome 调试窗口中重新登录即刻
+- 发送失败：如果点击"发送"后内容仍在输入框，重试点击一次
+- API 获取 URL 失败：输出动态内容前 50 字供用户手动确认
+
+---
+
+## 评论功能
+
+### 触发
+
+```
+/jike --comment <动态URL> <评论内容>
+```
+
+动态 URL 格式：`https://web.okjike.com/originalPost/<id>`
+
+### 流程
+
+#### Step 1: 导航到动态详情页
+
+```
+navigate_page(url: 动态URL)
+```
+
+等待加载后 take_snapshot，确认看到动态内容和评论输入框。
+
+#### Step 2: 输入评论
+
+```
+1. take_snapshot → 找到评论输入框
+   - 特征：textbox multiline，在评论区域内，紧跟在用户头像链接之后
+   - 与发布输入框类似，但位于动态详情页底部评论区
+2. click(uid) → 聚焦输入框
+3. type_text(text: 评论内容)
+```
+
+#### Step 3: 发送评论
+
+```
+1. take_snapshot → 找到 button "回复"
+2. click(uid) → 发送评论
+```
+
+**注意**：第一次点击可能不触发发送，需要再次 take_snapshot 检查。如果评论内容还在输入框中，再点击一次 "回复" 按钮。
+
+#### Step 4: 确认成功
+
+```
+take_snapshot → 确认评论出现在评论列表中（查找自己的用户名和评论内容）
+```
+
+### 评论注意事项
+
+- 评论输入框是 `textbox multiline`，与发布输入框结构相同
+- 发送按钮是 `button "回复"`（不是 "发送"）
+- 即刻评论中的链接会自动转为可点击的短链
