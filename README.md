@@ -1,6 +1,6 @@
 # Claude Code Social Skills
 
-通过 Chrome DevTools MCP 自动发布社交媒体内容的 Claude Code Skills。
+通过 Claude Code Skills 自动化社交媒体内容发布与优化。
 
 ## 支持平台
 
@@ -11,6 +11,7 @@
 | 小红书 | `/xhs` | 图文笔记 | 自动生成文字卡片 |
 | 知乎 | `/zhihu` | 文章 | 支持 Markdown |
 | 抖音 | `/douyin` | 图文 | 支持多图/自动生成卡片 |
+| **内容评估** | `/media-eval` | 评估+优化 | 分层评估+多平台改写 |
 
 ## 前置要求
 
@@ -97,6 +98,38 @@ curl http://127.0.0.1:9222/json/version
 > **注意**: 独立 `user-data-dir` 是干净的浏览器 profile，没有登录态。首次使用需要在弹出的 Chrome 中手动登录各平台。
 
 ## 使用方法
+
+### /media-eval - 内容评估与优化
+
+发布前先用 AI 资深编辑评估内容质量，自动改写为各平台版本。
+
+```
+/media-eval 你的内容文本
+```
+
+**指定目标平台：**
+```
+/media-eval --platform xhs,tweet 你的内容文本
+```
+
+**从文件评估：**
+```
+/media-eval path/to/article.md
+```
+
+**从 URL 评估：**
+```
+/media-eval https://example.com/article
+```
+
+**评估输出：**
+- 分层评估报告：内容本质层（叙事/观点/共鸣/可读性）+ 平台包装层（算法/调性/互动）
+- 总分（1-100）+ 各维度评分 + 具体到句子的改写建议
+- 针对每个目标平台的优化改写版本（不是截断，是调性重写）
+
+> 推荐工作流：`/media-eval` 评估优化 → `/tweet` `/xhs` `/zhihu` 等发布
+
+---
 
 ### /tweet - 发布 Twitter 推文
 
@@ -211,17 +244,19 @@ claude-code-social-skills/
 ├── README.md
 ├── requirements.txt
 └── skills/
+    ├── media-evaluator/
+    │   └── SKILL.md          # 内容评估与优化（纯 prompt，无依赖）
     ├── tweet/
-    │   ├── skill.md
+    │   ├── SKILL.md
     │   └── scripts/tweet_split.py
     ├── jike/
     │   └── SKILL.md
     ├── xhs/
-    │   └── skill.md
+    │   └── SKILL.md
     ├── zhihu/
     │   └── SKILL.md
     ├── douyin/
-    │   └── skill.md
+    │   └── SKILL.md
     └── _shared/
         ├── chrome-setup.md
         └── scripts/xhs_text_card.py
