@@ -154,38 +154,40 @@ def _tokenize(text):
 
 
 def _emoji_aware_wrap(text, width):
-    """emoji 感知的文本换行，每个 emoji 算 2 个字符宽度"""
-    tokens = _tokenize(text)
-    lines = []
-    current_line = ""
-    current_width = 0
-
-    for token_text, is_emoji in tokens:
-        if is_emoji:
-            token_width = 2  # emoji 算 2 字符宽
-            if current_width + token_width > width and current_line:
-                lines.append(current_line)
-                current_line = token_text
-                current_width = token_width
-            else:
-                current_line += token_text
-                current_width += token_width
-        else:
-            # 逐字符处理普通文本
-            for char in token_text:
-                # 中文/全角字符算 2 宽度，其他算 1
-                cw = 2 if ord(char) > 0x7F else 1
-                if current_width + cw > width and current_line:
-                    lines.append(current_line)
-                    current_line = char
-                    current_width = cw
+    """emoji 感知的文本换行，每个 emoji 算 2 个字符宽度，支持 \n 换行"""
+    # 先按换行符拆分段落，再对每段做自动换行
+    paragraphs = text.split("\n")
+    all_lines = []
+    for para in paragraphs:
+        if not para:
+            all_lines.append("")
+            continue
+        tokens = _tokenize(para)
+        current_line = ""
+        current_width = 0
+        for token_text, is_emoji in tokens:
+            if is_emoji:
+                token_width = 2  # emoji 算 2 字符宽
+                if current_width + token_width > width and current_line:
+                    all_lines.append(current_line)
+                    current_line = token_text
+                    current_width = token_width
                 else:
-                    current_line += char
-                    current_width += cw
-
-    if current_line:
-        lines.append(current_line)
-    return lines
+                    current_line += token_text
+                    current_width += token_width
+            else:
+                for char in token_text:
+                    cw = 2 if ord(char) > 0x7F else 1
+                    if current_width + cw > width and current_line:
+                        all_lines.append(current_line)
+                        current_line = char
+                        current_width = cw
+                    else:
+                        current_line += char
+                        current_width += cw
+        if current_line:
+            all_lines.append(current_line)
+    return all_lines
 
 
 def _draw_text_with_emoji(draw, img, x, y, text, text_font, emoji_font, fill):
@@ -318,7 +320,10 @@ def main():
                         choices=list(COLOR_SCHEMES.keys()),
                         help="配色方案 (默认随机)")
     args = parser.parse_args()
-    generate_card(args.title, args.content, args.output, args.scheme)
+    # 命令行传入的 \n 是字面字符串，需转换为真实换行符
+    title = args.title.replace("\\n", "\n")
+    content = args.content.replace("\\n", "\n")
+    generate_card(title, content, args.output, args.scheme)
 
 
 if __name__ == "__main__":
