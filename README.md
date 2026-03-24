@@ -178,7 +178,14 @@ curl http://127.0.0.1:9222/json/version
 /xhs --title "旅行日记" --images "photo1.jpg,photo2.jpg" 今天去了...
 ```
 
-> 未指定图片时，自动生成深色风格文字卡片。
+> 未指定图片时，自动生成高级风格文字卡片（支持 Emoji、渐变背景、5 套配色方案）。
+
+**指定卡片配色方案：**
+```
+/xhs --title "技术分享" --scheme midnight 内容...
+```
+
+可选配色：`midnight`（深靛蓝）、`forest`（墨绿）、`ember`（酒红暖橙）、`ocean`（深海蓝）、`lavender`（薰衣草紫），不指定则随机。
 
 ### /zhihu - 发布知乎文章
 
@@ -259,7 +266,8 @@ claude-code-social-skills/
     │   └── SKILL.md
     └── _shared/
         ├── chrome-setup.md
-        └── scripts/xhs_text_card.py
+        └── scripts/
+            └── xhs_text_card.py  # 文字卡片生成（渐变背景/5套配色/Emoji支持）
 ```
 
 ## License
