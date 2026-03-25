@@ -54,6 +54,24 @@ COLOR_SCHEMES = {
         "accent": (196, 167, 255),     # 淡紫
         "accent2": (232, 121, 249),    # 粉紫
     },
+    "ink": {
+        "bg_top": (26, 26, 26),        # 纯黑极简
+        "bg_bottom": (26, 26, 26),
+        "title": (255, 255, 255),
+        "content": (210, 210, 210),
+        "accent": (80, 80, 80),
+        "accent2": (60, 60, 60),
+        "gradient": False,
+    },
+    "paper": {
+        "bg_top": (245, 245, 245),     # 纯白极简
+        "bg_bottom": (245, 245, 245),
+        "title": (30, 30, 30),
+        "content": (68, 68, 68),
+        "accent": (180, 180, 180),
+        "accent2": (200, 200, 200),
+        "gradient": False,
+    },
 }
 
 # ── 字体 ──────────────────────────────────────────────────
@@ -216,9 +234,10 @@ def _draw_text_with_emoji(draw, img, x, y, text, text_font, emoji_font, fill):
 
 
 def _new_page(scheme):
-    """创建一个带渐变背景的新页面"""
+    """创建新页面，纯色或渐变背景"""
     img = Image.new("RGB", (WIDTH, HEIGHT), scheme["bg_top"])
-    _draw_gradient(img, scheme["bg_top"], scheme["bg_bottom"])
+    if scheme.get("gradient", True):
+        _draw_gradient(img, scheme["bg_top"], scheme["bg_bottom"])
     return img
 
 
@@ -232,17 +251,17 @@ def generate_card(title: str, content: str, output: str,
 
     # 字体
     title_font = _load_font(76, bold=True)
-    content_font = _load_font(38)
+    content_font = _load_font(32)
     emoji_font_title = _load_emoji_font(72)
-    emoji_font_content = _load_emoji_font(36)
+    emoji_font_content = _load_emoji_font(30)
 
     margin_x = 80
-    content_line_height = 58
+    content_line_height = 50
     max_content_y = HEIGHT - 120
     content_start_y = 100  # 续页正文起始 y
 
     # 预处理所有正文行
-    content_lines = _emoji_aware_wrap(content, width=38)
+    content_lines = _emoji_aware_wrap(content, width=52)
 
     # ── 第一页：标题 + 分隔线 + 正文开头 ──
     img = _new_page(scheme)
