@@ -12,6 +12,7 @@
 | 知乎 | `/zhihu` | 文章 | 支持 Markdown |
 | 抖音 | `/douyin` | 图文 | 支持多图/自动生成卡片 |
 | **内容评估** | `/media-eval` | 评估+优化 | 分层评估+多平台改写 |
+| **自动运营** | `/media-optimizer` | 编排调度 | 自动生成→评估→多平台同时发布 |
 
 ## 前置要求
 
@@ -128,6 +129,28 @@ curl http://127.0.0.1:9222/json/version
 - 针对每个目标平台的优化改写版本（不是截断，是调性重写）
 
 > 推荐工作流：`/media-eval` 评估优化 → `/tweet` `/xhs` `/zhihu` 等发布
+
+---
+
+### /media-optimizer - 自媒体自动化运营
+
+全自动编排系统：内容生成 → `/media-eval` 评估 → 五平台同时发布。
+
+```
+"生成今日内容"        # AI 扫描知识库+热点，生成内容
+"发布到所有平台"      # 自动评估+改写+五平台同时发布
+"查看数据报告"        # 各平台数据汇总分析
+```
+
+**核心流程：**
+```
+内容生成 → /media-eval 评估（评分>=75直接发，<75自动优化最多2次）
+         → 同时调用 /tweet /jike /xhs /zhihu /douyin 发布
+```
+
+**热点响应：** 检测到相关热点时，评估一次无论评分直接发布五平台，追速度。
+
+> media-optimizer 是编排层，评估委托 `/media-eval`，发布委托各平台 skill。
 
 ---
 
@@ -253,6 +276,10 @@ claude-code-social-skills/
 └── skills/
     ├── media-evaluator/
     │   └── SKILL.md          # 内容评估与优化（纯 prompt，无依赖）
+    ├── media-optimizer/
+    │   ├── SKILL.md          # 自动化运营编排（委托 media-eval + 各平台 skill）
+    │   ├── scripts/          # 内容生成、数据分析等脚本
+    │   └── templates/        # 内容模板
     ├── tweet/
     │   ├── SKILL.md
     │   └── scripts/tweet_split.py
