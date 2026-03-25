@@ -13,6 +13,7 @@
 | 抖音 | `/douyin` | 图文 | 支持多图/自动生成卡片 |
 | **内容评估** | `/media-eval` | 评估+优化 | 分层评估+多平台改写 |
 | **自动运营** | `/media-optimizer` | 编排调度 | 自动生成→评估→多平台同时发布 |
+| **商业伙伴** | `/business-partner` | 目标管理 | AI当CEO，分配任务、监督执行、追踪KPI |
 
 ## 前置要求
 
@@ -154,6 +155,23 @@ curl http://127.0.0.1:9222/json/version
 
 ---
 
+### /business-partner - 商业伙伴模式
+
+AI 当 CEO（Spark），你当 CTO（夜码人），合伙赚钱。
+
+```
+"商业伙伴"            # 启动商业伙伴模式
+"早上好"              # 早会：回顾昨日+分配今日任务
+"汇报"                # 晚会：总结成果+规划明日
+"KPI"                 # 查看目标达成度
+```
+
+**编排能力：** 自动委托 `/office-hours` 验证想法、`/media-optimizer` 运营自媒体、`/media-eval` 评估内容。
+
+> business-partner 是战略监督层，管"做什么"和"为什么做"，具体执行委托专业 skill。
+
+---
+
 ### /tweet - 发布 Twitter 推文
 
 ```
@@ -278,8 +296,10 @@ claude-code-social-skills/
     │   └── SKILL.md          # 内容评估与优化（纯 prompt，无依赖）
     ├── media-optimizer/
     │   ├── SKILL.md          # 自动化运营编排（委托 media-eval + 各平台 skill）
-    │   ├── scripts/          # 内容生成、数据分析等脚本
-    │   └── templates/        # 内容模板
+    │   └── scripts/          # 内容生成、数据分析等脚本
+    ├── business-partner/
+    │   ├── SKILL.md          # 商业伙伴模式（目标管理+任务监督+skill编排）
+    │   └── scripts/          # 初始化、任务管理等脚本
     ├── tweet/
     │   ├── SKILL.md
     │   └── scripts/tweet_split.py
