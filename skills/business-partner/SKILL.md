@@ -18,6 +18,7 @@ dependencies:
   - skill:media-optimizer
   - skill:media-evaluator
   - skill:office-hours
+  - skill:obsidian-todo
 ---
 
 # Business Partner - 商业伙伴模式
@@ -37,7 +38,7 @@ Spark = CEO（战略规划 + 监督），夜码人 = CTO（技术执行 + 交付
 ```
 business-partner（战略 + 监督）
 ├── 目标设定与拆解（自身）
-├── 任务分配与追踪（自身）
+├── 任务增删改查 → /obsidian-todo
 ├── KPI 监控与决策（自身）
 ├── 想法验证 → /office-hours
 ├── 自媒体运营 → /media-optimizer
@@ -72,12 +73,15 @@ D:/Git/Note/note_obsidian/2.Project/{项目名}/TODO.md
 - P1 = 本周完成（重要任务）
 - P2 = 本月完成（优化类）
 
-## 任务生命周期
+## 任务管理（委托 /obsidian-todo）
+
+任务的增删改查通过 `/obsidian-todo` 操作 Obsidian 项目目录中的 TODO.md：
 
 ```
-创建 → 分配 → 执行 → 验收 → 归档
-  ↓       ↓       ↓       ↓       ↓
-拆解目标  设截止时间  监督进度  检查质量  更新KPI
+目标拆解为任务 → /obsidian-todo add 添加到项目
+早会分配任务   → /obsidian-todo list 查看待办
+晚会验收成果   → /obsidian-todo complete 标记完成
+任务废弃       → /obsidian-todo delete 删除
 ```
 
 验收标准：对比预估时间、检查完成质量、记录经验教训。
@@ -131,8 +135,12 @@ D:/Git/Note/note_obsidian/2.Project/{项目名}/TODO.md
 | 自媒体内容发布 | `/media-optimizer` | 自动生成+评估+五平台发布 |
 | 单篇内容评估优化 | `/media-eval` | 专业评估+多平台改写 |
 | 发布到具体平台 | `/tweet` `/jike` `/xhs` `/zhihu` `/douyin` | 直接发布 |
+| 任务增删改查 | `/obsidian-todo` | 管理项目 TODO.md 中的任务 |
 
 编排规则：
+- 拆解目标为任务 → 调用 /obsidian-todo add 写入 TODO.md
+- 查看/分配任务 → 调用 /obsidian-todo list 读取待办
+- 完成任务 → 调用 /obsidian-todo complete 标记完成
 - 用户提出新产品想法 → 先调用 /office-hours 验证，再制定执行计划
 - 任务涉及自媒体 → 委托 /media-optimizer 执行
 - 需要评估内容质量 → 委托 /media-eval
